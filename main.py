@@ -9,7 +9,7 @@ from config import get_config
 from tqdm import tqdm
 import numpy as np
 from dataset import get_dataloader
-from losses import custom_loss_function, RMSELoss, SSIM_Loss
+from losses import custom_loss_function, RMSELoss, SSIM_Loss, SSIM_Loss_Lib, depth_loss
 from torchmetrics import StructuralSimilarityIndexMeasure
 
 def seed_everything(seed=27):
@@ -66,9 +66,12 @@ def train(model, trainloader, optimizer, criterion, iter_num, max_iterations, ba
     model.train()
     for i_batch, s_batch in enumerate(trainloader):
         image_batch, label_batch = s_batch[0].cuda(), s_batch[1].cuda()
+        #print(image_batch[0].min(), image_batch[0].max(),'min:', label_batch[0].min().item(),'max:', label_batch[0].max().item())
+        #print(image_batch[0].min(), image_batch[0].max())
         outputs = model(image_batch)
         outputs = nn.Sigmoid()(outputs)
         loss = criterion(outputs, label_batch)
+        #print(loss.item())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -78,7 +81,7 @@ def train(model, trainloader, optimizer, criterion, iter_num, max_iterations, ba
 
 def test(model, testloader):
     model.eval()
-    ssim = StructuralSimilarityIndexMeasure()
+    ssim = StructuralSimilarityIndexMeasure(data_range=1)
     mse_all = []
     #rmse_all = []
     ssim_all = []
@@ -105,16 +108,22 @@ def main():
             model = nn.DataParallel(model)
 
     if args.criterion == 'mse':        
-        criterion = nn.MSELoss()
+        criterion = nn.MSELoss().cuda()
+    elif args.criterion == 'depthloss':        
+        criterion = depth_loss().cuda()
+    elif args.criterion == 'l1':        
+        criterion = nn.L1Loss().cuda()
     elif args.criterion == 'ssim':        
-        criterion = SSIM_Loss().cuda()
+        #criterion = SSIM_Loss(data_range=1.0).cuda()
+        criterion = SSIM_Loss_Lib(data_range=1.0).cuda()
     if args.criterion == 'rmse':        
-        criterion = RMSELoss()
+        criterion = RMSELoss().cuda()
     elif args.criterion == 'bce':
-        criterion = nn.BCEloss()
+        criterion = nn.BCELoss().cuda()
     elif args.criterion == 'custom': 
         criterion = custom_loss_function
-    #criterion = nn.BCEWithLogitsLoss
+    
+
     optimizer = optim.SGD(model.parameters(), lr=args.base_lr, momentum=0.9, weight_decay=0.0001)
 
     max_iterations = args.max_epochs * len(trainloader) 
@@ -129,8 +138,8 @@ def main():
             best_epoch = epoch_num
             torch.save(model.state_dict(), args.ckpt)
             
-        print('Epoch:{}, Curr MSE:{:.6f}, Best MSE:{:.6f}, Best SSIM:{:.6f}, Best Epoch:{}'.
-                format(epoch_num, mse, best_mse, best_ssim, best_epoch))
+        print('Epoch:{}, Curr MSE:{:.6f}, Best MSE:{:.6f}, Best SSIM:{:.6f}, Best Epoch:{}, Criterion:{}'.
+                format(epoch_num, mse, best_mse, best_ssim, best_epoch, args.criterion))
         
         iter_num += 1
 

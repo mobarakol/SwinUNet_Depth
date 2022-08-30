@@ -4,6 +4,7 @@ import math
 import torch.nn.functional as F
 import numpy as np
 from torch import nn
+from torchmetrics import StructuralSimilarityIndexMeasure
 
 """ Loss file implementation refered from 
 https://github.com/ialhashim/DenseDepth/blob/master/PyTorch/loss.py
@@ -27,6 +28,14 @@ class RMSELoss(nn.Module):
     def forward(self,yhat,y):
         loss = torch.sqrt(self.mse(yhat,y) + self.eps)
         return loss
+
+class SSIM_Loss_Lib(nn.Module):
+    def __init__(self, data_range=1):
+        super().__init__()
+        self.ssim = StructuralSimilarityIndexMeasure(data_range=data_range)
+
+    def forward(self, img1, img2):
+        return 1 - self.ssim(img1, img2)
 
 
 import torch
@@ -202,5 +211,62 @@ class SSIM(torch.nn.Module):
 class SSIM_Loss(SSIM):
     def forward(self, img1, img2):
         return 1 - super(SSIM_Loss, self).forward(img1, img2)
+
+
+# depthloss: https://github.com/pranjaldatta/DenseDepth-Pytorch/blob/master/densedepth/losses.py
+def image_gradients(img, device):
+
+    """works like tf one"""
+    if len(img.shape) != 4:
+        raise ValueError("Shape mismatch. Needs to be 4 dim tensor")
+
+    img_shape = img.shape
+    batch_size, channels, height, width = img.shape
+
+    dy = img[:, :, 1:, :] - img[:, :, :-1, :]
+    dx = img[:, :, :, 1:] - img[:, :, :, :-1]
+
+    shape = np.stack([batch_size, channels, 1, width])
+    dy = torch.cat(
+        [
+            dy,
+            torch.zeros(
+                [batch_size, channels, 1, width], device=device, dtype=img.dtype
+            ),
+        ],
+        dim=2,
+    )
+    dy = dy.view(img_shape)
+
+    shape = np.stack([batch_size, channels, height, 1])
+    dx = torch.cat(
+        [
+            dx,
+            torch.zeros(
+                [batch_size, channels, height, 1], device=device, dtype=img.dtype
+            ),
+        ],
+        dim=3,
+    )
+    dx = dx.view(img_shape)
+
+    return dy, dx
+
+
+# Now we define the actual depth loss function
+def depth_loss(y_true, y_pred, theta=0.1, device="cuda", maxDepth=1000.0 / 10.0):
+
+    # Edges
+    dy_true, dx_true = image_gradients(y_true, device)
+    dy_pred, dx_pred = image_gradients(y_pred, device)
+    l_edges = torch.mean(
+        torch.abs(dy_pred - dy_true) + torch.abs(dx_pred - dx_true), dim=1
+    )
+
+    return l_edges
+
+
+
+
 
 

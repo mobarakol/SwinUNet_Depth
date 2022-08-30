@@ -1,4 +1,5 @@
 import os
+import cv2
 import argparse
 from glob import glob
 from PIL import Image
@@ -22,8 +23,10 @@ class SimCol3DDataloader(Dataset):
 
     def __getitem__(self, idx):
         img = Image.open(self.img_dir_all[idx]).convert('RGB')
-        depth_dir = self.img_dir_all[1][:-20] + 'Depth' + self.img_dir_all[1][-9:]
-        depth = Image.open(self.img_dir_all[idx]).convert('L')
+        depth_dir = self.img_dir_all[idx][:-20] + 'Depth' + self.img_dir_all[idx][-9:]
+        #depth = Image.open(depth_dir).convert('L')
+        depth = cv2.imread(depth_dir, cv2.IMREAD_GRAYSCALE)
+        depth = Image.fromarray(depth)
         img, depth = self.transform(img), self.transform_target(depth)
         return img, depth
 
