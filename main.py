@@ -32,7 +32,7 @@ def get_arg():
     parser.add_argument('--batch_size', type=int,
                         default=24, help='batch_size per gpu')
     parser.add_argument('--max_epochs', type=int,
-                        default=150, help='maximum epoch number to train')
+                        default=100, help='maximum epoch number to train')
     parser.add_argument('--img_size', type=int,
                         default=224, help='input patch size of network input')
     parser.add_argument('--cfg', type=str, metavar="FILE", 
@@ -54,6 +54,7 @@ def get_arg():
     parser.add_argument('--n_gpu', type=int, default=1, help='total gpu')
     parser.add_argument('--ckpt', type=str, default='best_model.pth.tar', help='total gpu')
     parser.add_argument('--criterion', type=str, default='mse', help='total gpu')
+    parser.add_argument('--aug', action='store_true', help='total gpu')
 
     if 'ipykernel' in sys.modules:
         args = parser.parse_args([])
@@ -138,8 +139,8 @@ def main():
             best_epoch = epoch_num
             torch.save(model.state_dict(), args.ckpt)
             
-        print('Epoch:{}, Curr MSE:{:.6f}, Best MSE:{:.6f}, Best SSIM:{:.6f}, Best Epoch:{}, Criterion:{}'.
-                format(epoch_num, mse, best_mse, best_ssim, best_epoch, args.criterion))
+        print('Epoch:{}, Curr MSE:{:.6f}, Best MSE:{:.6f}, Best SSIM:{:.6f}, Best Epoch:{}, Criterion:{}, Lr:{}'.
+                format(epoch_num, mse, best_mse, best_ssim, best_epoch, args.criterion, optimizer.param_groups[0]['lr']))
         
         iter_num += 1
 

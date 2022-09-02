@@ -6,6 +6,9 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+import torchvision.transforms.functional as TF
+
+    
 
 class SimCol3DDataloader(Dataset):
     def __init__(self, subsets, subjects, transform=None, transform_target=None):
@@ -28,16 +31,30 @@ class SimCol3DDataloader(Dataset):
         depth = cv2.imread(depth_dir, cv2.IMREAD_GRAYSCALE)
         depth = Image.fromarray(depth)
         img, depth = self.transform(img), self.transform_target(depth)
+
         return img, depth
 
 def get_dataloader(args):
-    train_subsets = ['../../dataset/SyntheticColon_I_Train', 'dataset/SyntheticColon_II_Train']
+    train_subsets = ['../dataset/SyntheticColon_I_Train', 'dataset/SyntheticColon_II_Train']
     train_subjects = [['S1', 'S2','S3', 'S6', 'S7', 'S8', 'S11', 'S12', 'S13'], ['B1', 'B2','B3', 'B6', 'B7', 'B8', 'B11', 'B12', 'B13']]
     # val
-    val_subsets = ['../../dataset/SyntheticColon_I_Train', 'dataset/SyntheticColon_II_Train']
+    val_subsets = ['../dataset/SyntheticColon_I_Train', 'dataset/SyntheticColon_II_Train']
     val_subjects = [['S4', 'S9', 'S14'], ['B4', 'B9', 'B14']]
+    if args.aug:
+        transform = transforms.Compose([
+                    transforms.Resize((224,224)),
+                    transforms.RandomApply(transforms=[transforms.ColorJitter(brightness=0.1, contrast=0.1)], p=0.5),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
+                    ])
 
-    transform = transforms.Compose([
+        transform_target = transforms.Compose([
+                    transforms.Resize((224,224)),
+                    transforms.ToTensor(),
+                    ])
+        
+    else:
+        transform = transforms.Compose([
                 transforms.Resize((224,224)),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=[0.485, 0.456, 0.406],std=[0.229, 0.224, 0.225])
