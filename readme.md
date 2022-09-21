@@ -1,7 +1,7 @@
 This repository contain depth estimation code and validated on the train datasets of the challenge [SimCol-to-3D 2022 - 3D Reconstruction During Colonoscopy](https://www.synapse.org/#!Synapse:syn28548633/wiki/617126)
 
 
-#MSE: MSE:0.000265, SSIM:0.968876
+# MSE: MSE:0.000265, SSIM:0.968876
 CUDA_VISIBLE_DEVICES=0 python main.py --ckpt ckpt/best_model_mse.pth.tar --criterion mse
 
 # SSIM: MSE:0.001259, SSIM:0.966289
