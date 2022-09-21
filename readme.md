@@ -1,4 +1,4 @@
-This repository contain depth estimation code and validated on the train datasets of the challenge [SimCol-to-3D 2022 - 3D Reconstruction During Colonoscopy](https://www.synapse.org/#!Synapse:syn28548633/wiki/617126)
+This repository contains depth estimation code and validated on the train datasets of the challenge [SimCol-to-3D 2022 - 3D Reconstruction During Colonoscopy](https://www.synapse.org/#!Synapse:syn28548633/wiki/617126)
 
 
 # MSE: MSE:0.000265, SSIM:0.968876
